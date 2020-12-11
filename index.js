@@ -34,7 +34,7 @@ app.post('/', (req, res) => {
   console.log('new params!');
   console.log(req.body);
   processMessages();
-  setInterval(processMessages, 5000); 
+  setInterval(processMessages, 60000); 
   res.send('ok');
 });
 
@@ -47,11 +47,12 @@ const processMessages = async () => {
     if (processing) {
       return;
     }
+    processing = true;
     await (async () => {
       const { data: { response, error } } = 
         await vkTransport.get(`/messages.getConversations?offset=0&count=1&access_token=${vkToken}&v=5.126`);
       if (error) {
-        return;
+	      throw new Error(error);
       }
       const item = response && response.items.length && response.items[0];
       if (item.last_message.id === lastMessageId) {
@@ -72,8 +73,6 @@ const processMessages = async () => {
         lastMessageId = item.last_message.id;
       }
     })();
-    processing = true;
-    await processMessages();
   } catch (e) {
     console.error(e.message);
   }
